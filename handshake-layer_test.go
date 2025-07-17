@@ -387,3 +387,17 @@ func TestHandshakeDTLSOverlappingFragments2(t *testing.T) {
 	f.addFragment(f.m0f1y, nil)
 	f.addFragment(f.m0f2, f.m0)
 }
+
+func TestHandshakeTypeClientCredential(t *testing.T) {
+	token := []byte("MirageTurtle")
+	clientRawPubKey := []byte("MirageTurtlePubKey")
+	cred := ClientCredentialBody{
+		Token:           token,
+		ClientRawPubKey: clientRawPubKey,
+	}
+	credByte, err := cred.Marshal()
+	assertNotError(t, err, "Failed to marshal ClientCredentialBody")
+	hm := newTestHandshakeMessage(HandshakeTypeClientCredential, credByte)
+	_, err = hm.ToBody()
+	assertNotError(t, err, "Failed to convert HandshakeTypeClientCredential body")
+}
