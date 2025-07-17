@@ -398,6 +398,11 @@ func TestHandshakeTypeClientCredential(t *testing.T) {
 	credByte, err := cred.Marshal()
 	assertNotError(t, err, "Failed to marshal ClientCredentialBody")
 	hm := newTestHandshakeMessage(HandshakeTypeClientCredential, credByte)
-	_, err = hm.ToBody()
+	body, err := hm.ToBody()
 	assertNotError(t, err, "Failed to convert HandshakeTypeClientCredential body")
+	// test body
+	assertEquals(t, body.Type(), HandshakeTypeClientCredential)
+	bodyByte, err := body.Marshal()
+	assertNotError(t, err, "Failed to marshal HandshakeTypeClientCredential body")
+	assertByteEquals(t, bodyByte, credByte)
 }

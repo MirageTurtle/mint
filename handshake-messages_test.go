@@ -687,7 +687,8 @@ func TestsafeUnmarshal(t *testing.T) {
 }
 
 func TestClientCredentialBodyUnmarshal(t *testing.T) {
-	token := []byte("MirageTurtle")
+	tokenStr := "MirageTurtle"
+	token := []byte(tokenStr)
 	clientRawPubKey := []byte("MirageTurtlePubKey")
 	cred := ClientCredentialBody{
 		Token:           token,
@@ -700,5 +701,7 @@ func TestClientCredentialBodyUnmarshal(t *testing.T) {
 	assertNotError(t, err, "Failed to unmarshal ClientCredentialBody")
 	assertEquals(t, read, len(out))
 	assertByteEquals(t, cred2.Token, token)
+	assertEquals(t, string(cred2.Token), tokenStr)
 	assertByteEquals(t, cred2.ClientRawPubKey, clientRawPubKey)
+	assertEquals(t, cred2.Type(), HandshakeTypeClientCredential)
 }
