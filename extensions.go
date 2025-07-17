@@ -12,10 +12,10 @@ type ExtensionBody interface {
 	Unmarshal(data []byte) (int, error)
 }
 
-// struct {
-//     ExtensionType extension_type;
-//     opaque extension_data<0..2^16-1>;
-// } Extension;
+//	struct {
+//	    ExtensionType extension_type;
+//	    opaque extension_data<0..2^16-1>;
+//	} Extension;
 type Extension struct {
 	ExtensionType ExtensionType
 	ExtensionData []byte `tls:"head=2"`
@@ -112,27 +112,28 @@ func (el ExtensionList) Find(dst ExtensionBody) (bool, error) {
 	return false, nil
 }
 
-// struct {
-//     NameType name_type;
-//     select (name_type) {
-//         case host_name: HostName;
-//     } name;
-// } ServerName;
+//	struct {
+//	    NameType name_type;
+//	    select (name_type) {
+//	        case host_name: HostName;
+//	    } name;
+//	} ServerName;
 //
-// enum {
-//     host_name(0), (255)
-// } NameType;
+//	enum {
+//	    host_name(0), (255)
+//	} NameType;
 //
 // opaque HostName<1..2^16-1>;
 //
-// struct {
-//     ServerName server_name_list<1..2^16-1>
-// } ServerNameList;
+//	struct {
+//	    ServerName server_name_list<1..2^16-1>
+//	} ServerNameList;
 //
 // But we only care about the case where there's a single DNS hostname.  We
 // will never create anything else, and throw if we receive something else
 //
-//      2         1          2
+//	2         1          2
+//
 // | listLen | NameType | nameLen | name |
 type ServerNameExtension string
 
@@ -177,23 +178,23 @@ func (sni *ServerNameExtension) Unmarshal(data []byte) (int, error) {
 	return read, nil
 }
 
-// struct {
-//     NamedGroup group;
-//     opaque key_exchange<1..2^16-1>;
-// } KeyShareEntry;
+//	struct {
+//	    NamedGroup group;
+//	    opaque key_exchange<1..2^16-1>;
+//	} KeyShareEntry;
 //
-// struct {
-//     select (Handshake.msg_type) {
-//         case client_hello:
-//             KeyShareEntry client_shares<0..2^16-1>;
+//	struct {
+//	    select (Handshake.msg_type) {
+//	        case client_hello:
+//	            KeyShareEntry client_shares<0..2^16-1>;
 //
-//         case hello_retry_request:
-//             NamedGroup selected_group;
+//	        case hello_retry_request:
+//	            NamedGroup selected_group;
 //
-//         case server_hello:
-//             KeyShareEntry server_share;
-//     };
-// } KeyShare;
+//	        case server_hello:
+//	            KeyShareEntry server_share;
+//	    };
+//	} KeyShare;
 type KeyShareEntry struct {
 	Group       NamedGroup
 	KeyExchange []byte `tls:"head=2,min=1"`
@@ -303,9 +304,9 @@ func (ks *KeyShareExtension) Unmarshal(data []byte) (int, error) {
 	}
 }
 
-// struct {
-//     NamedGroup named_group_list<2..2^16-1>;
-// } NamedGroupList;
+//	struct {
+//	    NamedGroup named_group_list<2..2^16-1>;
+//	} NamedGroupList;
 type SupportedGroupsExtension struct {
 	Groups []NamedGroup `tls:"head=2,min=2"`
 }
@@ -322,9 +323,9 @@ func (sg *SupportedGroupsExtension) Unmarshal(data []byte) (int, error) {
 	return syntax.Unmarshal(data, sg)
 }
 
-// struct {
-//   SignatureScheme supported_signature_algorithms<2..2^16-2>;
-// } SignatureSchemeList
+//	struct {
+//	  SignatureScheme supported_signature_algorithms<2..2^16-2>;
+//	} SignatureSchemeList
 type SignatureAlgorithmsExtension struct {
 	Algorithms []SignatureScheme `tls:"head=2,min=2"`
 }
@@ -341,22 +342,22 @@ func (sa *SignatureAlgorithmsExtension) Unmarshal(data []byte) (int, error) {
 	return syntax.Unmarshal(data, sa)
 }
 
-// struct {
-//     opaque identity<1..2^16-1>;
-//     uint32 obfuscated_ticket_age;
-// } PskIdentity;
+//	struct {
+//	    opaque identity<1..2^16-1>;
+//	    uint32 obfuscated_ticket_age;
+//	} PskIdentity;
 //
 // opaque PskBinderEntry<32..255>;
 //
-// struct {
-//     select (Handshake.msg_type) {
-//         case client_hello:
-//             PskIdentity identities<7..2^16-1>;
-//             PskBinderEntry binders<33..2^16-1>;
+//	struct {
+//	    select (Handshake.msg_type) {
+//	        case client_hello:
+//	            PskIdentity identities<7..2^16-1>;
+//	            PskBinderEntry binders<33..2^16-1>;
 //
-//         case server_hello:
-//             uint16 selected_identity;
-//     };
+//	        case server_hello:
+//	            uint16 selected_identity;
+//	    };
 //
 // } PreSharedKeyExtension;
 type PSKIdentity struct {
@@ -450,9 +451,9 @@ func (psk PreSharedKeyExtension) HasIdentity(id []byte) ([]byte, bool) {
 
 // enum { psk_ke(0), psk_dhe_ke(1), (255) } PskKeyExchangeMode;
 //
-// struct {
-//     PskKeyExchangeMode ke_modes<1..255>;
-// } PskKeyExchangeModes;
+//	struct {
+//	    PskKeyExchangeMode ke_modes<1..255>;
+//	} PskKeyExchangeModes;
 type PSKKeyExchangeModesExtension struct {
 	KEModes []PSKKeyExchangeMode `tls:"head=1,min=1"`
 }
@@ -508,9 +509,9 @@ func (tedi *TicketEarlyDataInfoExtension) Unmarshal(data []byte) (int, error) {
 
 // opaque ProtocolName<1..2^8-1>;
 //
-// struct {
-//     ProtocolName protocol_name_list<2..2^16-1>
-// } ProtocolNameList;
+//	struct {
+//	    ProtocolName protocol_name_list<2..2^16-1>
+//	} ProtocolNameList;
 type ALPNExtension struct {
 	Protocols []string
 }
@@ -550,9 +551,9 @@ func (alpn *ALPNExtension) Unmarshal(data []byte) (int, error) {
 	return read, nil
 }
 
-// struct {
-//     ProtocolVersion versions<2..254>;
-// } SupportedVersions;
+//	struct {
+//	    ProtocolVersion versions<2..254>;
+//	} SupportedVersions;
 type SupportedVersionsExtension struct {
 	HandshakeType HandshakeType
 	Versions      []uint16
@@ -606,9 +607,9 @@ func (sv *SupportedVersionsExtension) Unmarshal(data []byte) (int, error) {
 	}
 }
 
-// struct {
-//     opaque cookie<1..2^16-1>;
-// } Cookie;
+//	struct {
+//	    opaque cookie<1..2^16-1>;
+//	} Cookie;
 type CookieExtension struct {
 	Cookie []byte `tls:"head=2,min=1"`
 }
@@ -623,4 +624,28 @@ func (c CookieExtension) Marshal() ([]byte, error) {
 
 func (c *CookieExtension) Unmarshal(data []byte) (int, error) {
 	return syntax.Unmarshal(data, c)
+}
+
+// psk+mtls
+const (
+	ExtensionTypeClientCredential ExtensionType = 0xFF01
+)
+
+type clientCredentialExtension struct{}
+
+func (cc clientCredentialExtension) Type() ExtensionType {
+	return ExtensionTypeClientCredential
+}
+func (cc clientCredentialExtension) Marshal() ([]byte, error) {
+	// MirageTurtle:
+	// Actually, this is a placeholder to indicate that the extension is present.
+	// And this may cause additional data transmission.
+	// We may want to use []byte{} or nil here in the future.
+	return []byte("ClientCredentialExtension"), nil
+}
+func (cc *clientCredentialExtension) Unmarshal(data []byte) (int, error) {
+	if !bytes.Equal(data, []byte("ClientCredentialExtension")) {
+		return 0, fmt.Errorf("tls.clientcredential: Invalid data for client credential extension")
+	}
+	return len(data), nil
 }
