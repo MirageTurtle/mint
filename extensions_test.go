@@ -223,6 +223,14 @@ var validExtensionTestCases = map[ExtensionType]struct {
 		},
 		marshaledHex: "01020304",
 	},
+
+	// ClientCredential
+	ExtensionTypeClientCredential: {
+		blank:       &ClientCredentialExtension{},
+		unmarshaled: &ClientCredentialExtension{},
+		// marshaledHex: "436c69656e7443726564656e7469616c457874656e73696f6e",
+		marshaledHex: hex.EncodeToString([]byte(ExtensionTypeClientCredentialMagic)),
+	},
 }
 
 func TestExtensionBodyMarshalUnmarshal(t *testing.T) {

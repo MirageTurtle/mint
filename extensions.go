@@ -628,22 +628,23 @@ func (c *CookieExtension) Unmarshal(data []byte) (int, error) {
 
 // psk+mtls
 const (
-	ExtensionTypeClientCredential ExtensionType = 0xFF01
+	ExtensionTypeClientCredential      ExtensionType = 0xFF01
+	ExtensionTypeClientCredentialMagic               = "ClientCredentialExtension"
 )
 
-type clientCredentialExtension struct{}
+type ClientCredentialExtension struct{}
 
-func (cc clientCredentialExtension) Type() ExtensionType {
+func (cc ClientCredentialExtension) Type() ExtensionType {
 	return ExtensionTypeClientCredential
 }
-func (cc clientCredentialExtension) Marshal() ([]byte, error) {
+func (cc ClientCredentialExtension) Marshal() ([]byte, error) {
 	// MirageTurtle:
 	// Actually, this is a placeholder to indicate that the extension is present.
 	// And this may cause additional data transmission.
 	// We may want to use []byte{} or nil here in the future.
-	return []byte("ClientCredentialExtension"), nil
+	return []byte(ExtensionTypeClientCredentialMagic), nil
 }
-func (cc *clientCredentialExtension) Unmarshal(data []byte) (int, error) {
+func (cc *ClientCredentialExtension) Unmarshal(data []byte) (int, error) {
 	if !bytes.Equal(data, []byte("ClientCredentialExtension")) {
 		return 0, fmt.Errorf("tls.clientcredential: Invalid data for client credential extension")
 	}
