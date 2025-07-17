@@ -685,3 +685,20 @@ func TestsafeUnmarshal(t *testing.T) {
 	err = safeUnmarshal(&ch, tooLong)
 	assertError(t, err, "Unmarshalled something too long")
 }
+
+func TestClientCredentialBodyUnmarshal(t *testing.T) {
+	token := []byte("MirageTurtle")
+	clientRawPubKey := []byte("MirageTurtlePubKey")
+	cred := ClientCredentialBody{
+		Token:           token,
+		ClientRawPubKey: clientRawPubKey,
+	}
+	out, err := cred.Marshal()
+	assertNotError(t, err, "Failed to marshal ClientCredentialBody")
+	var cred2 ClientCredentialBody
+	read, err := cred2.Unmarshal(out)
+	assertNotError(t, err, "Failed to unmarshal ClientCredentialBody")
+	assertEquals(t, read, len(out))
+	assertByteEquals(t, cred2.Token, token)
+	assertByteEquals(t, cred2.ClientRawPubKey, clientRawPubKey)
+}
