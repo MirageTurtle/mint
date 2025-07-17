@@ -240,6 +240,13 @@ func (state stateConnected) ProcessMessage(hm *HandshakeMessage) (HandshakeState
 
 		toSend := []HandshakeAction{StorePSK{psk}}
 		return state, toSend, AlertNoAlert
+	case *ClientCredentialBody:
+		if !state.isClient {
+			logf(logTypeHandshake, "[StateConnected] Unexpected ClientCredential message in server state")
+			return nil, nil, AlertUnexpectedMessage
+		}
+		logf(logTypeHandshake, "[StateConnected] Received ClientCredential message in client state, assuming it is valid")
+		return nil, nil, AlertNoAlert
 	}
 
 	logf(logTypeHandshake, "[StateConnected] Unexpected message type %v", hm.msgType)
