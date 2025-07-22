@@ -10,6 +10,7 @@ import (
 	"github.com/bifurcation/mint/syntax"
 )
 
+// MirageTurtle[TODO]: Update Server State Machine diagram in the comments below
 // Server State Machine
 //
 //                              START <-----+
@@ -122,6 +123,7 @@ func (state serverStateStart) Next(hr handshakeMessageReader) (HandshakeState, [
 	clientALPN := new(ALPNExtension)
 	clientPSKModes := new(PSKKeyExchangeModesExtension)
 	clientCookie := new(CookieExtension)
+	clientCredential := new(ClientCredentialExtension)
 
 	// Handle external extensions.
 	if state.Config.ExtensionHandler != nil {
@@ -144,6 +146,7 @@ func (state serverStateStart) Next(hr handshakeMessageReader) (HandshakeState, [
 			clientALPN,
 			clientPSKModes,
 			clientCookie,
+			clientCredential,
 		})
 
 	if err != nil {
@@ -155,6 +158,11 @@ func (state serverStateStart) Next(hr handshakeMessageReader) (HandshakeState, [
 
 	if foundExts[ExtensionTypeServerName] {
 		connParams.ServerName = string(*serverName)
+	}
+
+	// MirageTurtle: For ClientCredential
+	if foundExts[ExtensionTypeClientCredential] {
+		logf(logTypeHandshake, "[ServerStateStart] Client sent ClientCredential extension")
 	}
 
 	// If the client didn't send supportedVersions or doesn't support 1.3,
