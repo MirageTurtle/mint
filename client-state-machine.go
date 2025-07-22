@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// MirageTurtle[TODO]: Update Client State Machine diagram in the comments below
 // Client State Machine
 //
 //                            START <----+
@@ -102,6 +103,9 @@ func (state clientStateStart) Next(hr handshakeMessageReader) (HandshakeState, [
 		alpn = &ALPNExtension{Protocols: state.Opts.NextProtos}
 	}
 
+	// MirageTurtle: ClientCredentialExtension
+	cc := ClientCredentialExtension{}
+
 	// Construct base ClientHello
 	ch := &ClientHelloBody{
 		LegacyVersion: wireVersion(state.hsCtx.hIn),
@@ -112,7 +116,7 @@ func (state clientStateStart) Next(hr handshakeMessageReader) (HandshakeState, [
 		logf(logTypeHandshake, "[ClientStateStart] Error creating ClientHello random [%v]", err)
 		return nil, nil, AlertInternalError
 	}
-	for _, ext := range []ExtensionBody{&sv, &sni, &ks, &sg, &sa} {
+	for _, ext := range []ExtensionBody{&sv, &sni, &ks, &sg, &sa, &cc} {
 		err := ch.Extensions.Add(ext)
 		if err != nil {
 			logf(logTypeHandshake, "[ClientStateStart] Error adding extension type=[%v] [%v]", ext.Type(), err)
