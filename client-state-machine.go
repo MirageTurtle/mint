@@ -116,7 +116,7 @@ func (state clientStateStart) Next(hr handshakeMessageReader) (HandshakeState, [
 		logf(logTypeHandshake, "[ClientStateStart] Error creating ClientHello random [%v]", err)
 		return nil, nil, AlertInternalError
 	}
-	for _, ext := range []ExtensionBody{&sv, &sni, &ks, &sg, &sa, &cc} {
+	for _, ext := range []ExtensionBody{&sv, &sni, &ks, &sg, &sa} {
 		err := ch.Extensions.Add(ext)
 		if err != nil {
 			logf(logTypeHandshake, "[ClientStateStart] Error adding extension type=[%v] [%v]", ext.Type(), err)
@@ -156,6 +156,13 @@ func (state clientStateStart) Next(hr handshakeMessageReader) (HandshakeState, [
 			logf(logTypeHandshake, "[ClientStateStart] Error running external extension sender [%v]", err)
 			return nil, nil, AlertInternalError
 		}
+	}
+
+	// MirageTurtle: ClientCredential
+	err = ch.Extensions.Add(&cc)
+	if err != nil {
+		logf(logTypeHandshake, "[ClientStateStart] Error adding ClientCredential extension [%v]", err)
+		return nil, nil, AlertInternalError
 	}
 
 	// Handle PSK and EarlyData just before transmitting, so that we can
