@@ -629,7 +629,7 @@ func (c *CookieExtension) Unmarshal(data []byte) (int, error) {
 // psk+mtls
 const (
 	ExtensionTypeClientCredential      ExtensionType = 0xFF01
-	ExtensionTypeClientCredentialMagic               = "ClientCredentialExtension"
+	ExtensionTypeClientCredentialMagic               = "MTClientCredentialExtension"
 )
 
 type ClientCredentialExtension struct{}
@@ -645,7 +645,7 @@ func (cc ClientCredentialExtension) Marshal() ([]byte, error) {
 	return []byte(ExtensionTypeClientCredentialMagic), nil
 }
 func (cc *ClientCredentialExtension) Unmarshal(data []byte) (int, error) {
-	if !bytes.Equal(data, []byte("ClientCredentialExtension")) {
+	if !bytes.Equal(data, []byte(ExtensionTypeClientCredentialMagic)) {
 		return 0, fmt.Errorf("tls.clientcredential: Invalid data for client credential extension")
 	}
 	return len(data), nil
