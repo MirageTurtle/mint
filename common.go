@@ -179,6 +179,8 @@ const (
 	StateClientWaitCV
 	StateClientWaitFinished
 	StateClientWaitCertCR
+	StateClientWaitSC
+	StateClientPreConnected
 	StateClientConnected
 	// states valid for the server
 	StateServerStart State = iota
@@ -189,6 +191,7 @@ const (
 	StateServerWaitFlight2
 	StateServerWaitCert
 	StateServerWaitCV
+	StateServerVerify
 	StateServerWaitFinished
 	StateServerConnected
 )
@@ -209,6 +212,10 @@ func (s State) String() string {
 		return "Client WAIT_FINISHED"
 	case StateClientWaitCertCR:
 		return "Client WAIT_CERT_CR"
+	case StateClientWaitSC:
+		return "Client WAIT_SC"
+	case StateClientPreConnected:
+		return "Client PRE_CONNECTED"
 	case StateClientConnected:
 		return "Client CONNECTED"
 	case StateServerStart:
@@ -227,6 +234,8 @@ func (s State) String() string {
 		return "Server WAIT_CERT"
 	case StateServerWaitCV:
 		return "Server WAIT_CV"
+	case StateServerVerify:
+		return "Server VERIFY"
 	case StateServerWaitFinished:
 		return "Server WAIT_FINISHED"
 	case StateServerConnected:

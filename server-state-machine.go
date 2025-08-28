@@ -1175,3 +1175,20 @@ func (state serverStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeS
 	}
 	return nextState, toSend, AlertNoAlert
 }
+
+// VERIFY
+type serverStateVerify struct {
+	Params ConnectionParameters
+	hsCtx  *HandshakeContext
+	err    error
+}
+
+var _ HandshakeState = &serverStateVerify{}
+
+func (state serverStateVerify) State() State {
+	return StateServerVerify
+}
+func (state serverStateVerify) Next(_ handshakeMessageReader) (HandshakeState, []HandshakeAction, Alert) {
+	//placeholder
+	return nil, nil, AlertNoAlert
+}

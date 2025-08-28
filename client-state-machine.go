@@ -1085,3 +1085,53 @@ func (state clientStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeS
 	}
 	return nextState, toSend, AlertNoAlert
 }
+
+// WAIT_SC
+type clientStateWaitSC struct {
+	Config    *Config
+	Opts      ConnectionOptions
+	Params    ConnectionParameters
+	hsCtx     *HandshakeContext
+	clientKey []byte
+	clientPub []byte
+	serverKey []byte
+	serverPub []byte
+	cookie    []byte
+	psk       PreSharedKey
+	PSK       []byte
+}
+
+var _ HandshakeState = &clientStateWaitSC{}
+
+func (state clientStateWaitSC) State() State {
+	return StateClientWaitSC
+}
+func (state clientStateWaitSC) Next(hr handshakeMessageReader) (HandshakeState, []HandshakeAction, Alert) {
+	// placeholder
+	return nil, nil, AlertNoAlert
+}
+
+// PRE_CONNECTED
+type clientStatePreConnected struct {
+	Config    *Config
+	Opts      ConnectionOptions
+	Params    ConnectionParameters
+	hsCtx     *HandshakeContext
+	clientKey []byte
+	clientPub []byte
+	serverKey []byte
+	serverPub []byte
+	cookie    []byte
+	psk       PreSharedKey
+	PSK       []byte
+}
+
+var _ HandshakeState = &clientStatePreConnected{}
+
+func (state clientStatePreConnected) State() State {
+	return StateClientPreConnected
+}
+func (state clientStatePreConnected) Next(hr handshakeMessageReader) (HandshakeState, []HandshakeAction, Alert) {
+	// placeholder
+	return nil, nil, AlertNoAlert
+}
