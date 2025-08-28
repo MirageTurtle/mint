@@ -138,6 +138,18 @@ func TestMessageToBody(t *testing.T) {
 	_, err = hm.ToBody()
 	assertNotError(t, err, "Failed to convert NewSessionTicket body")
 
+	// Test successful marshal of TokenRequest
+	tokenRequestValid := unhex(tokenRequestValidHex)
+	hm = newTestHandshakeMessage(HandshakeTypeTokenRequest, tokenRequestValid)
+	_, err = hm.ToBody()
+	assertNotError(t, err, "Failed to convert TokenRequest body")
+
+	// Test successful marshal of TokenResult
+	tokenResultValid := unhex(tokenResultValidHex)
+	hm = newTestHandshakeMessage(HandshakeTypeTokenResult, tokenResultValid)
+	_, err = hm.ToBody()
+	assertNotError(t, err, "Failed to convert TokenResult body")
+
 	// Test failure on unsupported body type
 	hm = newTestHandshakeMessage(HandshakeTypeHelloRetryRequest, []byte{})
 	_, err = hm.ToBody()
@@ -386,4 +398,44 @@ func TestHandshakeDTLSOverlappingFragments2(t *testing.T) {
 	f.addFragment(f.m0f0, nil)
 	f.addFragment(f.m0f1y, nil)
 	f.addFragment(f.m0f2, f.m0)
+}
+
+func TestTokenHandshakeMessages(t *testing.T) {
+	// Test TokenRequest handshake message
+	tokenRequestValid := unhex(tokenRequestValidHex)
+	tokenRequestMsg := newTestHandshakeMessage(HandshakeTypeTokenRequest, tokenRequestValid)
+
+	// Test that it marshals correctly
+	marshaled := tokenRequestMsg.Marshal()
+	assertNotError(t, nil, "Failed to marshal TokenRequest message")
+	assertTrue(t, len(marshaled) > 0, "Marshaled TokenRequest message should not be empty")
+
+	// Test that it converts to body correctly
+	body, err := tokenRequestMsg.ToBody()
+	assertNotError(t, err, "Failed to convert TokenRequest to body")
+	assertTrue(t, body != nil, "TokenRequest body should not be nil")
+
+	// Test type assertion
+	tokenRequestBody, ok := body.(*TokenRequestBody)
+	assertTrue(t, ok, "Body should be of type TokenRequestBody")
+	assertDeepEquals(t, tokenRequestBody, &tokenRequestValidIn)
+
+	// Test TokenResult handshake message
+	tokenResultValid := unhex(tokenResultValidHex)
+	tokenResultMsg := newTestHandshakeMessage(HandshakeTypeTokenResult, tokenResultValid)
+
+	// Test that it marshals correctly
+	marshaled = tokenResultMsg.Marshal()
+	assertNotError(t, nil, "Failed to marshal TokenResult message")
+	assertTrue(t, len(marshaled) > 0, "Marshaled TokenResult message should not be empty")
+
+	// Test that it converts to body correctly
+	body, err = tokenResultMsg.ToBody()
+	assertNotError(t, err, "Failed to convert TokenResult to body")
+	assertTrue(t, body != nil, "TokenResult body should not be nil")
+
+	// Test type assertion
+	tokenResultBody, ok := body.(*TokenResultBody)
+	assertTrue(t, ok, "Body should be of type TokenResultBody")
+	assertDeepEquals(t, tokenResultBody, &tokenResultValidIn)
 }

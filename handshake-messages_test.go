@@ -229,6 +229,20 @@ var (
 	// EndOfEarlyData test cases
 	endOfEarlyDataValidHex = ""
 	endOfEarlyDataValidIn  = EndOfEarlyDataBody{}
+
+	// TokenRequest test cases
+	tokenRequestValidIn  = TokenRequestBody{
+		Token:      []byte{0x01, 0x02, 0x03, 0x04},
+		Extensions: ExtensionList{},
+	}
+	tokenRequestValidHex = "0004010203040000"
+
+	// TokenResult test cases
+	tokenResultValidIn  = TokenResultBody{
+		Token:      []byte{0x05, 0x06, 0x07, 0x08},
+		Extensions: ExtensionList{},
+	}
+	tokenResultValidHex = "0004050607080000"
 )
 
 func TestHandshakeMessageTypes(t *testing.T) {
@@ -238,6 +252,8 @@ func TestHandshakeMessageTypes(t *testing.T) {
 	assertEquals(t, EncryptedExtensionsBody{}.Type(), HandshakeTypeEncryptedExtensions)
 	assertEquals(t, CertificateBody{}.Type(), HandshakeTypeCertificate)
 	assertEquals(t, CertificateVerifyBody{}.Type(), HandshakeTypeCertificateVerify)
+	assertEquals(t, TokenRequestBody{}.Type(), HandshakeTypeTokenRequest)
+	assertEquals(t, TokenResultBody{}.Type(), HandshakeTypeTokenResult)
 }
 
 func TestClientHelloMarshalUnmarshal(t *testing.T) {
@@ -684,4 +700,42 @@ func TestSafeUnmarshal(t *testing.T) {
 	// Now test that safeUnmarshal barfs
 	err = safeUnmarshal(&ch, tooLong)
 	assertError(t, err, "Unmarshalled something too long")
+}
+
+func TestTokenRequestMarshalUnmarshal(t *testing.T) {
+	tokenRequestValid := unhex(tokenRequestValidHex)
+
+	// Test correctness of handshake type
+	assertEquals(t, (TokenRequestBody{}).Type(), HandshakeTypeTokenRequest)
+
+	// Test successful marshal
+	out, err := tokenRequestValidIn.Marshal()
+	assertNotError(t, err, "Failed to marshal a valid TokenRequest")
+	assertByteEquals(t, out, tokenRequestValid)
+
+	// Test successful unmarshal
+	var tr TokenRequestBody
+	read, err := tr.Unmarshal(tokenRequestValid)
+	assertNotError(t, err, "Failed to unmarshal a valid TokenRequest")
+	assertEquals(t, read, len(tokenRequestValid))
+	assertDeepEquals(t, tr, tokenRequestValidIn)
+}
+
+func TestTokenResultMarshalUnmarshal(t *testing.T) {
+	tokenResultValid := unhex(tokenResultValidHex)
+
+	// Test correctness of handshake type
+	assertEquals(t, (TokenResultBody{}).Type(), HandshakeTypeTokenResult)
+
+	// Test successful marshal
+	out, err := tokenResultValidIn.Marshal()
+	assertNotError(t, err, "Failed to marshal a valid TokenResult")
+	assertByteEquals(t, out, tokenResultValid)
+
+	// Test successful unmarshal
+	var tr TokenResultBody
+	read, err := tr.Unmarshal(tokenResultValid)
+	assertNotError(t, err, "Failed to unmarshal a valid TokenResult")
+	assertEquals(t, read, len(tokenResultValid))
+	assertDeepEquals(t, tr, tokenResultValidIn)
 }

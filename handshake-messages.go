@@ -479,3 +479,45 @@ func (eoed EndOfEarlyDataBody) Marshal() ([]byte, error) {
 func (eoed *EndOfEarlyDataBody) Unmarshal(data []byte) (int, error) {
 	return 0, nil
 }
+
+//	struct {
+//	    opaque token<1..2^16-1>;
+//	    Extension extensions<0..2^16-1>;
+//	} TokenRequest;
+type TokenRequestBody struct {
+	Token      []byte        `tls:"head=2,min=1"`
+	Extensions ExtensionList `tls:"head=2"`
+}
+
+func (tr TokenRequestBody) Type() HandshakeType {
+	return HandshakeTypeTokenRequest
+}
+
+func (tr TokenRequestBody) Marshal() ([]byte, error) {
+	return syntax.Marshal(tr)
+}
+
+func (tr *TokenRequestBody) Unmarshal(data []byte) (int, error) {
+	return syntax.Unmarshal(data, tr)
+}
+
+//	struct {
+//	    opaque token<1..2^16-1>;
+//	    Extension extensions<0..2^16-1>;
+//	} TokenResult;
+type TokenResultBody struct {
+	Token      []byte        `tls:"head=2,min=1"`
+	Extensions ExtensionList `tls:"head=2"`
+}
+
+func (tr TokenResultBody) Type() HandshakeType {
+	return HandshakeTypeTokenResult
+}
+
+func (tr TokenResultBody) Marshal() ([]byte, error) {
+	return syntax.Marshal(tr)
+}
+
+func (tr *TokenResultBody) Unmarshal(data []byte) (int, error) {
+	return syntax.Unmarshal(data, tr)
+}

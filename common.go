@@ -46,6 +46,8 @@ const (
 	HandshakeTypeFinished            HandshakeType = 20
 	HandshakeTypeKeyUpdate           HandshakeType = 24
 	HandshakeTypeMessageHash         HandshakeType = 254
+	HandshakeTypeTokenRequest        HandshakeType = 53
+	HandshakeTypeTokenResult         HandshakeType = 54
 )
 
 var hrrRandomSentinel = [32]byte{

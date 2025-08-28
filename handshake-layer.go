@@ -92,6 +92,10 @@ func (hm HandshakeMessage) ToBody() (HandshakeMessageBody, error) {
 		body = new(KeyUpdateBody)
 	case HandshakeTypeEndOfEarlyData:
 		body = new(EndOfEarlyDataBody)
+	case HandshakeTypeTokenRequest:
+		body = new(TokenRequestBody)
+	case HandshakeTypeTokenResult:
+		body = new(TokenResultBody)
 	default:
 		return body, fmt.Errorf("tls.handshakemessage: Unsupported body type")
 	}
