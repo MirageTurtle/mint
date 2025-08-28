@@ -482,11 +482,11 @@ func (eoed *EndOfEarlyDataBody) Unmarshal(data []byte) (int, error) {
 
 //	struct {
 //	    opaque token<1..2^16-1>;
-//	    Extension extensions<0..2^16-1>;
+//	    opaque public_key<1..2^16-1>;
 //	} TokenRequest;
 type TokenRequestBody struct {
-	Token      []byte        `tls:"head=2,min=1"`
-	Extensions ExtensionList `tls:"head=2"`
+	Token     []byte `tls:"head=2,min=1"`
+	PublicKey []byte `tls:"head=2,min=1"`
 }
 
 func (tr TokenRequestBody) Type() HandshakeType {
@@ -502,12 +502,12 @@ func (tr *TokenRequestBody) Unmarshal(data []byte) (int, error) {
 }
 
 //	struct {
-//	    opaque token<1..2^16-1>;
-//	    Extension extensions<0..2^16-1>;
+//	    opaque result<1..2^16-1>;
+//	    opaque signed_cert<1..2^16-1>;
 //	} TokenResult;
 type TokenResultBody struct {
-	Token      []byte        `tls:"head=2,min=1"`
-	Extensions ExtensionList `tls:"head=2"`
+	Result     []byte `tls:"head=2,min=1"`
+	SignedCert []byte `tls:"head=2,min=1"`
 }
 
 func (tr TokenResultBody) Type() HandshakeType {

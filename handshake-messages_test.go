@@ -231,18 +231,18 @@ var (
 	endOfEarlyDataValidIn  = EndOfEarlyDataBody{}
 
 	// TokenRequest test cases
-	tokenRequestValidIn  = TokenRequestBody{
-		Token:      []byte{0x01, 0x02, 0x03, 0x04},
-		Extensions: ExtensionList{},
+	tokenRequestValidIn = TokenRequestBody{
+		Token:     []byte{0x01, 0x02, 0x03, 0x04},
+		PublicKey: []byte{0x05, 0x06, 0x07, 0x08},
 	}
-	tokenRequestValidHex = "0004010203040000"
+	tokenRequestValidHex = "000401020304000405060708"
 
 	// TokenResult test cases
-	tokenResultValidIn  = TokenResultBody{
-		Token:      []byte{0x05, 0x06, 0x07, 0x08},
-		Extensions: ExtensionList{},
+	tokenResultValidIn = TokenResultBody{
+		Result:     []byte{0x01},
+		SignedCert: []byte{0x02, 0x03, 0x04},
 	}
-	tokenResultValidHex = "0004050607080000"
+	tokenResultValidHex = "0001010003020304"
 )
 
 func TestHandshakeMessageTypes(t *testing.T) {
