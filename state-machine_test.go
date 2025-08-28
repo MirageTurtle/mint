@@ -358,6 +358,54 @@ func TestStateMachineIntegration(t *testing.T) {
 					stateConnected{},
 				},
 			},
+
+			// Client auth, token based
+			"clientAuthToken": {
+				clientConfig: &Config{
+					Groups:             []NamedGroup{P256},
+					SignatureSchemes:   []SignatureScheme{ECDSA_P256_SHA256},
+					PSKModes:           []PSKKeyExchangeMode{PSKModeDHEKE},
+					CipherSuites:       []CipherSuite{TLS_AES_128_GCM_SHA256},
+					PSKs:               &PSKMapCache{},
+					InsecureSkipVerify: true,
+				},
+				clientOptions: ConnectionOptions{
+					ServerName: "example.com",
+					NextProtos: []string{"h2"},
+				},
+				serverConfig: &Config{
+					Groups:            []NamedGroup{P256},
+					SignatureSchemes:  []SignatureScheme{ECDSA_P256_SHA256},
+					PSKModes:          []PSKKeyExchangeMode{PSKModeDHEKE},
+					CipherSuites:      []CipherSuite{TLS_AES_128_GCM_SHA256},
+					PSKs:              &PSKMapCache{},
+					Certificates:      certificates,
+					RequireClientAuth: true,
+				},
+				clientStateSequence: []HandshakeState{
+					clientStateStart{},
+					clientStateWaitSH{},
+					clientStateWaitEE{},
+					clientStateWaitCertCR{},
+					clientStateWaitCert{},
+					clientStateWaitCV{},
+					clientStateWaitFinished{},
+					clientStateWaitSC{},
+					clientStatePreConnected{},
+					stateConnected{},
+				},
+				serverStateSequence: []HandshakeState{
+					serverStateStart{},
+					serverStateNegotiated{},
+					serverStateWaitFlight2{},
+					serverStateWaitCert{},
+					serverStateVerify{},
+					serverStateWaitCert{},
+					// serverStateWaitCV{},
+					serverStateWaitFinished{},
+					stateConnected{},
+				},
+			},
 		}
 	)
 

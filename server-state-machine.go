@@ -962,9 +962,35 @@ func (state serverStateWaitCert) Next(hr handshakeMessageReader) (HandshakeState
 	if alert != AlertNoAlert {
 		return nil, nil, alert
 	}
-	if hm == nil || hm.msgType != HandshakeTypeCertificate {
+	if hm == nil || (hm.msgType != HandshakeTypeCertificate && hm.msgType != HandshakeTypeTokenRequest) {
 		logf(logTypeHandshake, "[ServerStateWaitCert] Unexpected message")
 		return nil, nil, AlertUnexpectedMessage
+	}
+
+	state.handshakeHash.Write(hm.Marshal())
+
+	// MTurtle: if we get a TokenRequest, we should handle it with VERIFY state
+	if hm.msgType == HandshakeTypeTokenRequest {
+		logf(logTypeHandshake, "[ServerStateWaitCert] -> [ServerStateVerify]")
+		nextState := serverStateVerify{
+			Config:                       state.Config,
+			Params:                       state.Params,
+			hsCtx:                        state.hsCtx,
+			cryptoParams:                 state.cryptoParams,
+			masterSecret:                 state.masterSecret,
+			clientHandshakeTrafficSecret: state.clientHandshakeTrafficSecret,
+			handshakeHash:                state.handshakeHash,
+			clientTrafficSecret:          state.clientTrafficSecret,
+			serverTrafficSecret:          state.serverTrafficSecret,
+			exporterSecret:               state.exporterSecret,
+
+			tokenRequest: &TokenRequestBody{},
+		}
+		if err := safeUnmarshal(nextState.tokenRequest, hm.body); err != nil {
+			logf(logTypeHandshake, "[ServerStateWaitCert] Error decoding TokenRequest message %v", err)
+			return nil, nil, AlertDecodeError
+		}
+		return nextState, nil, AlertNoAlert
 	}
 
 	cert := &CertificateBody{}
@@ -972,8 +998,6 @@ func (state serverStateWaitCert) Next(hr handshakeMessageReader) (HandshakeState
 		logf(logTypeHandshake, "[ServerStateWaitCert] Unexpected message")
 		return nil, nil, AlertDecodeError
 	}
-
-	state.handshakeHash.Write(hm.Marshal())
 
 	if len(cert.CertificateList) == 0 {
 		logf(logTypeHandshake, "[ServerStateWaitCert] WARNING client did not provide a certificate")
@@ -1123,6 +1147,7 @@ func (state serverStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeS
 	}
 	if hm == nil || hm.msgType != HandshakeTypeFinished {
 		logf(logTypeHandshake, "[ServerStateWaitFinished] Unexpected message")
+		logf(logTypeHandshake, "Excpected Finished, got type %v", hm.msgType)
 		return nil, nil, AlertUnexpectedMessage
 	}
 
@@ -1178,9 +1203,18 @@ func (state serverStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeS
 
 // VERIFY
 type serverStateVerify struct {
-	Params ConnectionParameters
-	hsCtx  *HandshakeContext
-	err    error
+	Config                       *Config
+	Params                       ConnectionParameters
+	hsCtx                        *HandshakeContext
+	cryptoParams                 CipherSuiteParams
+	masterSecret                 []byte
+	clientHandshakeTrafficSecret []byte
+	handshakeHash                hash.Hash
+	clientTrafficSecret          []byte
+	serverTrafficSecret          []byte
+	exporterSecret               []byte
+
+	tokenRequest *TokenRequestBody
 }
 
 var _ HandshakeState = &serverStateVerify{}
@@ -1189,6 +1223,46 @@ func (state serverStateVerify) State() State {
 	return StateServerVerify
 }
 func (state serverStateVerify) Next(_ handshakeMessageReader) (HandshakeState, []HandshakeAction, Alert) {
-	//placeholder
-	return nil, nil, AlertNoAlert
+	logf(logTypeHandshake, "[ServerStateVerify] Here is the mock VERIFY state!")
+	// Now, we assume the token is valid and sign a certificate for the client
+	result := []byte{0x01}
+	algo := ECDSA_P256_SHA256
+	// MTurtle: maybe should use clientName?
+	// MTurtle: and it's should be signed by (at least a self-hosted) CA
+	_, mockClientCert, err := MakeNewSelfSignedCert("mock-client", algo)
+	if err != nil {
+		return nil, nil, AlertInternalError
+	}
+	tokenResult := &TokenResultBody{
+		Result:     result,
+		SignedCert: mockClientCert.Raw,
+	}
+
+	// Move to WaitCert state for receiving the Certificate message
+	tr, err := state.hsCtx.hOut.HandshakeMessageFromBody(tokenResult)
+	if err != nil {
+		logf(logTypeHandshake, "[ServerStateVerify] Error marshaling TokenResult [%v]", err)
+		return nil, nil, AlertInternalError
+	}
+
+	toSend := []HandshakeAction{
+		QueueHandshakeMessage{tr},
+		SendQueuedHandshake{},
+	}
+	state.handshakeHash.Write(tr.Marshal())
+
+	logf(logTypeHandshake, "[ServerStateVerify] -> [ServerStateWaitCert]")
+	nextState := serverStateWaitCert{
+		Config:                       state.Config,
+		Params:                       state.Params,
+		hsCtx:                        state.hsCtx,
+		cryptoParams:                 state.cryptoParams,
+		handshakeHash:                state.handshakeHash,
+		masterSecret:                 state.masterSecret,
+		clientHandshakeTrafficSecret: state.clientHandshakeTrafficSecret,
+		clientTrafficSecret:          state.clientTrafficSecret,
+		serverTrafficSecret:          state.serverTrafficSecret,
+		exporterSecret:               state.exporterSecret,
+	}
+	return nextState, toSend, AlertNoAlert
 }
