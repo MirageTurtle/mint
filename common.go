@@ -156,9 +156,9 @@ const (
 	PSKModeDHEKE PSKKeyExchangeMode = 1
 )
 
-// enum {
-//     update_not_requested(0), update_requested(1), (255)
-// } KeyUpdateRequest;
+//	enum {
+//	    update_not_requested(0), update_requested(1), (255)
+//	} KeyUpdateRequest;
 type KeyUpdateRequest uint8
 
 const (
