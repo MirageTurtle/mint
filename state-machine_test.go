@@ -76,6 +76,7 @@ func TestStateMachineIntegration(t *testing.T) {
 					clientStateWaitCertCR{},
 					clientStateWaitCV{},
 					clientStateWaitFinished{},
+					clientStatePreConnected{},
 					stateConnected{},
 				},
 				serverStateSequence: []HandshakeState{
@@ -119,6 +120,7 @@ func TestStateMachineIntegration(t *testing.T) {
 					clientStateWaitCertCR{},
 					clientStateWaitCV{},
 					clientStateWaitFinished{},
+					clientStatePreConnected{},
 					stateConnected{},
 				},
 				serverStateSequence: []HandshakeState{
@@ -162,6 +164,7 @@ func TestStateMachineIntegration(t *testing.T) {
 					clientStateWaitSH{},
 					clientStateWaitEE{},
 					clientStateWaitFinished{},
+					clientStatePreConnected{},
 					stateConnected{},
 				},
 				serverStateSequence: []HandshakeState{
@@ -254,6 +257,7 @@ func TestStateMachineIntegration(t *testing.T) {
 					clientStateWaitCertCR{},
 					clientStateWaitCV{},
 					clientStateWaitFinished{},
+					clientStatePreConnected{},
 					stateConnected{},
 				},
 				serverStateSequence: []HandshakeState{
@@ -297,6 +301,7 @@ func TestStateMachineIntegration(t *testing.T) {
 					clientStateWaitCert{},
 					clientStateWaitCV{},
 					clientStateWaitFinished{},
+					clientStatePreConnected{},
 					stateConnected{},
 				},
 				serverStateSequence: []HandshakeState{
@@ -341,6 +346,7 @@ func TestStateMachineIntegration(t *testing.T) {
 					clientStateWaitCert{},
 					clientStateWaitCV{},
 					clientStateWaitFinished{},
+					clientStatePreConnected{},
 					stateConnected{},
 				},
 				serverStateSequence: []HandshakeState{

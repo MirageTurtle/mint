@@ -932,22 +932,176 @@ func (state clientStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeS
 		return nil, nil, AlertHandshakeFailure
 	}
 
+	// MTurtle: for token-based auth
+	some_condition := false
+	if some_condition {
+		// 1. Send TokenRequest handshake message
+		tokenRequest := &TokenRequestBody{
+			Token:     []byte("test_token"),
+			PublicKey: []byte("test_pub_key"),
+		}
+		tokenRequestM, err := state.hsCtx.hOut.HandshakeMessageFromBody(tokenRequest)
+		if err != nil {
+			logf(logTypeHandshake, "[ClientStateWaitFinished] Error marshaling TokenRequest [%v]", err)
+			return nil, nil, AlertInternalError
+		}
+		toSend := []HandshakeAction{
+			QueueHandshakeMessage{tokenRequestM},
+			SendQueuedHandshake{},
+		}
+		state.handshakeHash.Write(tokenRequestM.Marshal())
+		// 2. and move to WAIT_SC state
+		logf(logTypeHandshake, "[ClientStateWaitFinished] -> [ClientStateWaitSC]")
+		nextState := clientStateWaitSC{
+			Params:        state.Params,
+			hsCtx:         state.hsCtx,
+			cryptoParams:  state.cryptoParams,
+			handshakeHash: state.handshakeHash,
+
+			certificates:             state.certificates,
+			serverCertificateRequest: state.serverCertificateRequest,
+			peerCertificates:         state.peerCertificates,
+			verifiedChains:           state.verifiedChains,
+
+			masterSecret:                 state.masterSecret,
+			clientHandshakeTrafficSecret: state.clientHandshakeTrafficSecret,
+			serverHandshakeTrafficSecret: state.serverHandshakeTrafficSecret,
+		}
+		return nextState, toSend, AlertNoAlert
+	}
+	// MTurtle: if not token-based auth, goto PRE_CONNECTED
 	// Update the handshake hash with the Finished
 	state.handshakeHash.Write(hm.Marshal())
 	logf(logTypeCrypto, "input to handshake hash [%d]: %x", len(hm.Marshal()), hm.Marshal())
 	h4 := state.handshakeHash.Sum(nil)
 	logf(logTypeCrypto, "handshake hash 4 [%d]: %x", len(h4), h4)
 
+	logf(logTypeHandshake, "[ClientStateWaitFinished] -> [ClientStatePreConnected]")
+	nextState := clientStatePreConnected{
+		Params:        state.Params,
+		hsCtx:         state.hsCtx,
+		cryptoParams:  state.cryptoParams,
+		handshakeHash: state.handshakeHash,
+
+		certificates:             state.certificates,
+		serverCertificateRequest: state.serverCertificateRequest,
+		peerCertificates:         state.peerCertificates,
+		verifiedChains:           state.verifiedChains,
+
+		masterSecret:                 state.masterSecret,
+		clientHandshakeTrafficSecret: state.clientHandshakeTrafficSecret,
+		serverHandshakeTrafficSecret: state.serverHandshakeTrafficSecret,
+
+		messageHash: h4,
+	}
+	return nextState, nil, AlertNoAlert
+}
+
+// WAIT_SC
+type clientStateWaitSC struct {
+	Params        ConnectionParameters
+	hsCtx         *HandshakeContext
+	cryptoParams  CipherSuiteParams
+	handshakeHash hash.Hash
+
+	certificates             []*Certificate
+	serverCertificateRequest *CertificateRequestBody
+	peerCertificates         []*x509.Certificate
+	verifiedChains           [][]*x509.Certificate
+
+	masterSecret                 []byte
+	clientHandshakeTrafficSecret []byte
+	serverHandshakeTrafficSecret []byte
+}
+
+var _ HandshakeState = &clientStateWaitSC{}
+
+func (state clientStateWaitSC) State() State {
+	return StateClientWaitSC
+}
+func (state clientStateWaitSC) Next(hr handshakeMessageReader) (HandshakeState, []HandshakeAction, Alert) {
+	hm, alert := hr.ReadMessage()
+	if alert != AlertNoAlert {
+		return nil, nil, alert
+	}
+	if hm == nil || hm.msgType != HandshakeTypeTokenResult {
+		logf(logTypeHandshake, "[ClientStateWaitSC] Unexpected message")
+		return nil, nil, AlertUnexpectedMessage
+	}
+
+	// Get token result
+	tokenResult := &TokenResultBody{}
+	if err := safeUnmarshal(tokenResult, hm.body); err != nil {
+		logf(logTypeHandshake, "[ClientStateWaitSC] Error decoding message: %v", err)
+		return nil, nil, AlertDecodeError
+	}
+	state.handshakeHash.Write(hm.Marshal())
+	logf(logTypeCrypto, "input to handshake hash [%d]: %x", len(hm.Marshal()), hm.Marshal())
+	h4 := state.handshakeHash.Sum(nil)
+	logf(logTypeCrypto, "handshake hash 4 [%d]: %x", len(h4), h4)
+	logf(logTypeHandshake, "Received token result: %s", string(tokenResult.Result))
+	// Process token result
+	if !bytes.Equal(tokenResult.Result, []byte{0x01}) {
+		logf(logTypeHandshake, "[ClientStateWaitSC] Token exchange failed")
+		return nil, nil, AlertHandshakeFailure
+	}
+	// Store Signed Certificate
+	logf(logTypeHandshake, "Received signed certificate: %s", string(tokenResult.SignedCert))
+	// Move to PRE_CONNECTED state
+	logf(logTypeHandshake, "[ClientStateWaitSC] -> [ClientStatePreConnected]")
+	nextState := clientStatePreConnected{
+		Params:        state.Params,
+		hsCtx:         state.hsCtx,
+		cryptoParams:  state.cryptoParams,
+		handshakeHash: state.handshakeHash,
+
+		certificates:             state.certificates,
+		serverCertificateRequest: state.serverCertificateRequest,
+		peerCertificates:         state.peerCertificates,
+		verifiedChains:           state.verifiedChains,
+
+		masterSecret:                 state.masterSecret,
+		clientHandshakeTrafficSecret: state.clientHandshakeTrafficSecret,
+		serverHandshakeTrafficSecret: state.serverHandshakeTrafficSecret,
+	}
+	return nextState, nil, AlertNoAlert
+}
+
+// PRE_CONNECTED
+type clientStatePreConnected struct {
+	Params        ConnectionParameters
+	hsCtx         *HandshakeContext
+	cryptoParams  CipherSuiteParams
+	handshakeHash hash.Hash
+
+	certificates             []*Certificate
+	serverCertificateRequest *CertificateRequestBody
+	peerCertificates         []*x509.Certificate
+	verifiedChains           [][]*x509.Certificate
+
+	masterSecret                 []byte
+	clientHandshakeTrafficSecret []byte
+	serverHandshakeTrafficSecret []byte
+
+	messageHash []byte
+}
+
+var _ HandshakeState = &clientStatePreConnected{}
+
+func (state clientStatePreConnected) State() State {
+	return StateClientPreConnected
+}
+func (state clientStatePreConnected) Next(hr handshakeMessageReader) (HandshakeState, []HandshakeAction, Alert) {
 	// Compute traffic secrets and keys
-	clientTrafficSecret := deriveSecret(state.cryptoParams, state.masterSecret, labelClientApplicationTrafficSecret, h4)
-	serverTrafficSecret := deriveSecret(state.cryptoParams, state.masterSecret, labelServerApplicationTrafficSecret, h4)
+	clientTrafficSecret := deriveSecret(state.cryptoParams, state.masterSecret, labelClientApplicationTrafficSecret, state.messageHash)
+	serverTrafficSecret := deriveSecret(state.cryptoParams, state.masterSecret, labelServerApplicationTrafficSecret, state.messageHash)
 	logf(logTypeCrypto, "client traffic secret: [%d] %x", len(clientTrafficSecret), clientTrafficSecret)
 	logf(logTypeCrypto, "server traffic secret: [%d] %x", len(serverTrafficSecret), serverTrafficSecret)
 
 	clientTrafficKeys := makeTrafficKeys(state.cryptoParams, clientTrafficSecret)
 	serverTrafficKeys := makeTrafficKeys(state.cryptoParams, serverTrafficSecret)
 
-	exporterSecret := deriveSecret(state.cryptoParams, state.masterSecret, labelExporterSecret, h4)
+	exporterSecret := deriveSecret(state.cryptoParams, state.masterSecret, labelExporterSecret, state.messageHash)
 	logf(logTypeCrypto, "client exporter secret: [%d] %x", len(exporterSecret), exporterSecret)
 
 	// Assemble client's second flight
@@ -1044,7 +1198,7 @@ func (state clientStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeS
 	clientFinishedData := computeFinishedData(state.cryptoParams, state.clientHandshakeTrafficSecret, h5)
 	logf(logTypeCrypto, "client Finished data: [%d] %x", len(clientFinishedData), clientFinishedData)
 
-	fin = &FinishedBody{
+	fin := &FinishedBody{
 		VerifyDataLen: len(clientFinishedData),
 		VerifyData:    clientFinishedData,
 	}
@@ -1084,54 +1238,4 @@ func (state clientStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeS
 		verifiedChains:      state.verifiedChains,
 	}
 	return nextState, toSend, AlertNoAlert
-}
-
-// WAIT_SC
-type clientStateWaitSC struct {
-	Config    *Config
-	Opts      ConnectionOptions
-	Params    ConnectionParameters
-	hsCtx     *HandshakeContext
-	clientKey []byte
-	clientPub []byte
-	serverKey []byte
-	serverPub []byte
-	cookie    []byte
-	psk       PreSharedKey
-	PSK       []byte
-}
-
-var _ HandshakeState = &clientStateWaitSC{}
-
-func (state clientStateWaitSC) State() State {
-	return StateClientWaitSC
-}
-func (state clientStateWaitSC) Next(hr handshakeMessageReader) (HandshakeState, []HandshakeAction, Alert) {
-	// placeholder
-	return nil, nil, AlertNoAlert
-}
-
-// PRE_CONNECTED
-type clientStatePreConnected struct {
-	Config    *Config
-	Opts      ConnectionOptions
-	Params    ConnectionParameters
-	hsCtx     *HandshakeContext
-	clientKey []byte
-	clientPub []byte
-	serverKey []byte
-	serverPub []byte
-	cookie    []byte
-	psk       PreSharedKey
-	PSK       []byte
-}
-
-var _ HandshakeState = &clientStatePreConnected{}
-
-func (state clientStatePreConnected) State() State {
-	return StateClientPreConnected
-}
-func (state clientStatePreConnected) Next(hr handshakeMessageReader) (HandshakeState, []HandshakeAction, Alert) {
-	// placeholder
-	return nil, nil, AlertNoAlert
 }
