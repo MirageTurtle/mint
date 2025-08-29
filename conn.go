@@ -177,6 +177,13 @@ func (c *Config) Clone() *Config {
 		PSKModes:              c.PSKModes,
 		NonBlocking:           c.NonBlocking,
 		UseDTLS:               c.UseDTLS,
+
+		UseTokenAuth: c.UseTokenAuth,
+		Token:        c.Token,
+		ValidTokens:  c.ValidTokens,
+
+		ClientPrivateKey: c.ClientPrivateKey,
+		ServerSignedCert: c.ServerSignedCert,
 	}
 }
 

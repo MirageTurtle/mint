@@ -1183,6 +1183,7 @@ func (state clientStatePreConnected) Next(hr handshakeMessageReader) (HandshakeS
 		}
 
 		// Select a certificate
+		logf(logTypeHandshake, "Have %d certificates to choose from", len(state.certificates))
 		cert, certScheme, err := CertificateSelection(nil, schemes.Algorithms, state.certificates)
 		if err != nil {
 			// XXX: Signal this to the application layer?

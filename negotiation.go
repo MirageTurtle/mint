@@ -153,6 +153,7 @@ func CertificateSelection(serverName *string, signatureSchemes []SignatureScheme
 
 		candidates = candidatesByName
 	}
+	logf(logTypeNegotiation, "Certificate selection: serverName=%v candidates=%d", serverName, len(candidates))
 
 	// Select for signature scheme
 	for _, cert := range candidates {

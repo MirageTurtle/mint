@@ -538,11 +538,11 @@ const (
 	labelResumption                     = "resumption"
 )
 
-// struct HkdfLabel {
-//    uint16 length;
-//    opaque label<9..255>;
-//    opaque hash_value<0..255>;
-// };
+//	struct HkdfLabel {
+//	   uint16 length;
+//	   opaque label<9..255>;
+//	   opaque hash_value<0..255>;
+//	};
 func hkdfEncodeLabel(labelIn string, hashValue []byte, outLen int) []byte {
 	label := "tls13 " + labelIn
 

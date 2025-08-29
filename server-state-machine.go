@@ -709,8 +709,8 @@ func (state serverStateNegotiated) Next(_ handshakeMessageReader) (HandshakeStat
 	logf(logTypeCrypto, "client traffic secret: [%d] %x", len(clientTrafficSecret), clientTrafficSecret)
 	logf(logTypeCrypto, "server traffic secret: [%d] %x", len(serverTrafficSecret), serverTrafficSecret)
 
-	serverTrafficKeys := makeTrafficKeys(params, serverTrafficSecret)
-	toSend = append(toSend, RekeyOut{epoch: EpochApplicationData, KeySet: serverTrafficKeys})
+	// serverTrafficKeys := makeTrafficKeys(params, serverTrafficSecret)
+	// toSend = append(toSend, RekeyOut{epoch: EpochApplicationData, KeySet: serverTrafficKeys})
 
 	exporterSecret := deriveSecret(params, masterSecret, labelExporterSecret, h4)
 	logf(logTypeCrypto, "server exporter secret: [%d] %x", len(exporterSecret), exporterSecret)
@@ -1001,20 +1001,21 @@ func (state serverStateWaitCert) Next(hr handshakeMessageReader) (HandshakeState
 
 	if len(cert.CertificateList) == 0 {
 		logf(logTypeHandshake, "[ServerStateWaitCert] WARNING client did not provide a certificate")
+		return nil, nil, AlertAccessDenied
 
-		logf(logTypeHandshake, "[ServerStateWaitCert] -> [ServerStateWaitFinished]")
-		nextState := serverStateWaitFinished{
-			Params:                       state.Params,
-			hsCtx:                        state.hsCtx,
-			cryptoParams:                 state.cryptoParams,
-			masterSecret:                 state.masterSecret,
-			clientHandshakeTrafficSecret: state.clientHandshakeTrafficSecret,
-			handshakeHash:                state.handshakeHash,
-			clientTrafficSecret:          state.clientTrafficSecret,
-			serverTrafficSecret:          state.serverTrafficSecret,
-			exporterSecret:               state.exporterSecret,
-		}
-		return nextState, nil, AlertNoAlert
+		// logf(logTypeHandshake, "[ServerStateWaitCert] -> [ServerStateWaitFinished]")
+		// nextState := serverStateWaitFinished{
+		// 	Params:                       state.Params,
+		// 	hsCtx:                        state.hsCtx,
+		// 	cryptoParams:                 state.cryptoParams,
+		// 	masterSecret:                 state.masterSecret,
+		// 	clientHandshakeTrafficSecret: state.clientHandshakeTrafficSecret,
+		// 	handshakeHash:                state.handshakeHash,
+		// 	clientTrafficSecret:          state.clientTrafficSecret,
+		// 	serverTrafficSecret:          state.serverTrafficSecret,
+		// 	exporterSecret:               state.exporterSecret,
+		// }
+		// return nextState, nil, AlertNoAlert
 	}
 
 	logf(logTypeHandshake, "[ServerStateWaitCert] -> [ServerStateWaitCV]")
@@ -1141,6 +1142,12 @@ func (state serverStateWaitFinished) State() State {
 }
 
 func (state serverStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeState, []HandshakeAction, Alert) {
+	// Moved from the K_send = application from NEGOTIATED state
+	serverTrafficKeys := makeTrafficKeys(state.cryptoParams, state.serverTrafficSecret)
+	toSend := []HandshakeAction{
+		RekeyOut{epoch: EpochApplicationData, KeySet: serverTrafficKeys},
+	}
+
 	hm, alert := hr.ReadMessage()
 	if alert != AlertNoAlert {
 		return nil, nil, alert
@@ -1195,9 +1202,12 @@ func (state serverStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeS
 		peerCertificates:    state.peerCertificates,
 		verifiedChains:      state.verifiedChains,
 	}
-	toSend := []HandshakeAction{
+	// toSend := []HandshakeAction{
+	// 	RekeyIn{epoch: EpochApplicationData, KeySet: clientTrafficKeys},
+	// }
+	toSend = append(toSend, []HandshakeAction{
 		RekeyIn{epoch: EpochApplicationData, KeySet: clientTrafficKeys},
-	}
+	}...)
 	return nextState, toSend, AlertNoAlert
 }
 

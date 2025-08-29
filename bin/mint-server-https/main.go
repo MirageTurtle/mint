@@ -12,20 +12,25 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/bifurcation/mint"
 	"golang.org/x/net/http2"
 )
 
 var (
-	port         string
-	serverName   string
-	certFile     string
-	keyFile      string
-	responseFile string
-	h2           bool
-	sendTickets  bool
-	genCert      bool
+	port           string
+	serverName     string
+	certFile       string
+	keyFile        string
+	responseFile   string
+	h2             bool
+	sendTickets    bool
+	genCert        bool
+	clientAuth     bool
+	validTokens    string
+	clientCertFile string
 )
 
 type responder []byte
@@ -118,6 +123,9 @@ func main() {
 	flag.StringVar(&responseFile, "response", "", "file to serve")
 	flag.BoolVar(&h2, "h2", false, "whether to use HTTP/2 (exclusively)")
 	flag.BoolVar(&sendTickets, "tickets", true, "whether to send session tickets")
+	flag.BoolVar(&clientAuth, "clientauth", false, "whether to request client auth")
+	flag.StringVar(&validTokens, "validtokens", "", "comma-separated list of valid tokens for token auth")
+	flag.StringVar(&clientCertFile, "clientcert", "", "file containing PEM encoded client certificate to accept")
 	flag.Parse()
 
 	var certChain []*x509.Certificate
@@ -182,10 +190,33 @@ func main() {
 	}
 	handler := responder(response)
 
+	validTokensMap := make(map[string]bool)
+	if validTokens != "" {
+		for _, t := range strings.Split(validTokens, ",") {
+			validTokensMap[strings.TrimSpace(t)] = true
+		}
+	}
+
 	config := mint.Config{
 		SendSessionTickets: true,
 		ServerName:         serverName,
 		NextProtos:         []string{"http/1.1"},
+		RequireClientAuth:  clientAuth,
+		ValidTokens:        validTokensMap,
+	}
+
+	// for mocking token-based auth
+	if clientAuth && clientCertFile != "" {
+		certData, err := os.ReadFile(clientCertFile)
+		if err != nil {
+			log.Fatalf("Error reading client cert file: %v", err)
+		}
+		clientCerts, err := ParseCertificatesPEM(certData)
+		if err != nil || len(clientCerts) == 0 {
+			log.Fatalf("Error parsing client cert file: %v", err)
+		}
+		log.Printf("Loaded %d client certificates for auth", len(clientCerts))
+		config.ServerSignedCert = *clientCerts[0]
 	}
 
 	if h2 {
