@@ -277,7 +277,7 @@ func TestStateMachineIntegration(t *testing.T) {
 					PSKModes:           []PSKKeyExchangeMode{PSKModeDHEKE},
 					CipherSuites:       []CipherSuite{TLS_AES_128_GCM_SHA256},
 					PSKs:               &PSKMapCache{},
-					Certificates:       certificates,
+					Certificates:       clientCertificates,
 					InsecureSkipVerify: true,
 				},
 				clientOptions: ConnectionOptions{
