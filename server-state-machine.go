@@ -1224,15 +1224,16 @@ func (state serverStateVerify) State() State {
 }
 func (state serverStateVerify) Next(_ handshakeMessageReader) (HandshakeState, []HandshakeAction, Alert) {
 	logf(logTypeHandshake, "[ServerStateVerify] Here is the mock VERIFY state!")
+	if bytes.Equal(state.tokenRequest.Token, []byte("mock_token")) {
+		logf(logTypeHandshake, "[ServerStateVerify] Received expected token: %s", state.tokenRequest.Token)
+	} else {
+		logf(logTypeHandshake, "[ServerStateVerify] Received invalid token: %s", state.tokenRequest.Token)
+		return nil, nil, AlertAccessDenied
+	}
 	// Now, we assume the token is valid and sign a certificate for the client
 	result := []byte{0x01}
-	algo := ECDSA_P256_SHA256
-	// MTurtle: maybe should use clientName?
-	// MTurtle: and it's should be signed by (at least a self-hosted) CA
-	_, mockClientCert, err := MakeNewSelfSignedCert("mock-client", algo)
-	if err != nil {
-		return nil, nil, AlertInternalError
-	}
+	// MTurtle: use a mock self-signed certificate for now
+	mockClientCert := state.Config.ServerSignedCert
 	tokenResult := &TokenResultBody{
 		Result:     result,
 		SignedCert: mockClientCert.Raw,

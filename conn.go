@@ -134,6 +134,10 @@ type Config struct {
 	// The same config object can be shared among different connections, so it
 	// needs its own mutex
 	mutex sync.RWMutex
+
+	// MTurtle: for mocking certificate signing
+	ClientPrivateKey crypto.Signer
+	ServerSignedCert x509.Certificate
 }
 
 // Clone returns a shallow clone of c. It is safe to clone a Config that is

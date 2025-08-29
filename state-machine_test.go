@@ -368,6 +368,7 @@ func TestStateMachineIntegration(t *testing.T) {
 					CipherSuites:       []CipherSuite{TLS_AES_128_GCM_SHA256},
 					PSKs:               &PSKMapCache{},
 					InsecureSkipVerify: true,
+					ClientPrivateKey:   clientKey,
 				},
 				clientOptions: ConnectionOptions{
 					ServerName: "example.com",
@@ -381,6 +382,7 @@ func TestStateMachineIntegration(t *testing.T) {
 					PSKs:              &PSKMapCache{},
 					Certificates:      certificates,
 					RequireClientAuth: true,
+					ServerSignedCert:  *clientCert,
 				},
 				clientStateSequence: []HandshakeState{
 					clientStateStart{},
@@ -401,7 +403,7 @@ func TestStateMachineIntegration(t *testing.T) {
 					serverStateWaitCert{},
 					serverStateVerify{},
 					serverStateWaitCert{},
-					// serverStateWaitCV{},
+					serverStateWaitCV{},
 					serverStateWaitFinished{},
 					stateConnected{},
 				},

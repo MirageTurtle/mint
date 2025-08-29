@@ -876,6 +876,8 @@ func (state clientStateWaitCV) Next(hr handshakeMessageReader) (HandshakeState, 
 		serverHandshakeTrafficSecret: state.serverHandshakeTrafficSecret,
 		peerCertificates:             certs,
 		verifiedChains:               verifiedChains,
+
+		mockClientPrivateKey: state.Config.ClientPrivateKey,
 	}
 	return nextState, nil, AlertNoAlert
 }
@@ -894,6 +896,8 @@ type clientStateWaitFinished struct {
 	masterSecret                 []byte
 	clientHandshakeTrafficSecret []byte
 	serverHandshakeTrafficSecret []byte
+
+	mockClientPrivateKey crypto.Signer // MTurtle: for token-based auth
 }
 
 var _ HandshakeState = &clientStateWaitFinished{}
@@ -949,8 +953,8 @@ func (state clientStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeS
 	if some_condition {
 		// 1. Send TokenRequest handshake message
 		tokenRequest := &TokenRequestBody{
-			Token:     []byte("test_token"),
-			PublicKey: []byte("test_pub_key"),
+			Token:     []byte("mock_token"),
+			PublicKey: []byte("mock_public_key"),
 		}
 		tokenRequestM, err := state.hsCtx.hOut.HandshakeMessageFromBody(tokenRequest)
 		if err != nil {
@@ -982,6 +986,8 @@ func (state clientStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeS
 			messageHashForSecret: h4,
 			clientTrafficSecret:  clientTrafficSecret,
 			serverTrafficSecret:  serverTrafficSecret,
+
+			mockClientPrivateKey: state.mockClientPrivateKey,
 		}
 		return nextState, toSend, AlertNoAlert
 	}
@@ -1029,6 +1035,8 @@ type clientStateWaitSC struct {
 	messageHashForSecret []byte
 	clientTrafficSecret  []byte
 	serverTrafficSecret  []byte
+
+	mockClientPrivateKey crypto.Signer // MTurtle: for token-based auth
 }
 
 var _ HandshakeState = &clientStateWaitSC{}
@@ -1063,13 +1071,16 @@ func (state clientStateWaitSC) Next(hr handshakeMessageReader) (HandshakeState, 
 	// Store Signed Certificate
 	logf(logTypeHandshake, "Received signed certificate: %s", string(tokenResult.SignedCert))
 	logf(logTypeHandshake, "WARNING: Storing signed certificate is not implemented, only for this session now")
+	signedCert, err := x509.ParseCertificate(tokenResult.SignedCert)
+	if err != nil {
+		logf(logTypeHandshake, "[ClientStateWaitSC] Error parsing signed certificate: %v", err)
+		return nil, nil, AlertDecodeError
+	}
 	// Add signed cert to cert list
+	// MTurtle: use a mock private key for now
 	state.certificates = append(state.certificates, &Certificate{
-		Chain: []*x509.Certificate{
-			{
-				Raw: tokenResult.SignedCert,
-			},
-		},
+		Chain:      []*x509.Certificate{signedCert},
+		PrivateKey: state.mockClientPrivateKey,
 	})
 
 	logf(logTypeCrypto, "input to handshake hash [%d]: %x", len(hm.Marshal()), hm.Marshal())
