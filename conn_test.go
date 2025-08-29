@@ -1060,7 +1060,7 @@ func TestNonblockingHandshakeAndDataFlow(t *testing.T) {
 
 	// Release server first flight
 	sbConn.Flush()
-	states = []State{StateClientWaitEE, StateClientWaitCertCR, StateClientWaitCV, StateClientWaitFinished, StateClientConnected}
+	states = []State{StateClientWaitEE, StateClientWaitCertCR, StateClientWaitCV, StateClientWaitFinished, StateClientPreConnected, StateClientConnected}
 	for _, state := range states {
 		clientAlert = client.Handshake()
 		assertEquals(t, client.GetHsState(), state)
@@ -1310,7 +1310,7 @@ func TestNonblockingHandshakeAndDataFlowDTLS(t *testing.T) {
 
 	// Release server first flight
 	sbConn.Flush()
-	states = []State{StateClientWaitEE, StateClientWaitCertCR, StateClientWaitCV, StateClientWaitFinished, StateClientConnected}
+	states = []State{StateClientWaitEE, StateClientWaitCertCR, StateClientWaitCV, StateClientWaitFinished, StateClientPreConnected, StateClientConnected}
 	for _, state := range states {
 		clientAlert = client.Handshake()
 		assertEquals(t, client.GetHsState(), state)
@@ -1408,7 +1408,7 @@ func TestTimeoutAndRetransmissionDTLS(t *testing.T) {
 	assertEquals(t, server.GetHsState(), StateServerWaitFinished)
 
 	sbConn.Flush()
-	states = []State{StateClientWaitEE, StateClientWaitCertCR, StateClientWaitCV, StateClientWaitFinished, StateClientConnected}
+	states = []State{StateClientWaitEE, StateClientWaitCertCR, StateClientWaitCV, StateClientWaitFinished, StateClientPreConnected, StateClientConnected}
 	for _, state := range states {
 		clientAlert = client.Handshake()
 		assertEquals(t, client.GetHsState(), state)
