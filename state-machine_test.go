@@ -369,6 +369,8 @@ func TestStateMachineIntegration(t *testing.T) {
 					PSKs:               &PSKMapCache{},
 					InsecureSkipVerify: true,
 					ClientPrivateKey:   clientKey,
+					UseTokenAuth:       true,
+					Token:              "configured-client-token-8c1f",
 				},
 				clientOptions: ConnectionOptions{
 					ServerName: "example.com",
@@ -383,6 +385,7 @@ func TestStateMachineIntegration(t *testing.T) {
 					Certificates:      certificates,
 					RequireClientAuth: true,
 					ServerSignedCert:  *clientCert,
+					ValidTokens:       map[string]bool{"configured-client-token-8c1f": true},
 				},
 				clientStateSequence: []HandshakeState{
 					clientStateStart{},

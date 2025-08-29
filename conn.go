@@ -135,6 +135,10 @@ type Config struct {
 	// needs its own mutex
 	mutex sync.RWMutex
 
+	// MTurtle: for token-based auth
+	UseTokenAuth bool
+	Token        string
+	ValidTokens  map[string]bool
 	// MTurtle: for mocking certificate signing
 	ClientPrivateKey crypto.Signer
 	ServerSignedCert x509.Certificate

@@ -620,6 +620,7 @@ func (state clientStateWaitEE) Next(hr handshakeMessageReader) (HandshakeState, 
 	if state.Params.UsingPSK {
 		logf(logTypeHandshake, "[ClientStateWaitEE] -> [ClientStateWaitFinished]")
 		nextState := clientStateWaitFinished{
+			Config:                       state.Config,
 			Params:                       state.Params,
 			hsCtx:                        state.hsCtx,
 			cryptoParams:                 state.cryptoParams,
@@ -865,6 +866,7 @@ func (state clientStateWaitCV) Next(hr handshakeMessageReader) (HandshakeState, 
 
 	logf(logTypeHandshake, "[ClientStateWaitCV] -> [ClientStateWaitFinished]")
 	nextState := clientStateWaitFinished{
+		Config:                       state.Config,
 		Params:                       state.Params,
 		hsCtx:                        state.hsCtx,
 		cryptoParams:                 state.cryptoParams,
@@ -876,13 +878,12 @@ func (state clientStateWaitCV) Next(hr handshakeMessageReader) (HandshakeState, 
 		serverHandshakeTrafficSecret: state.serverHandshakeTrafficSecret,
 		peerCertificates:             certs,
 		verifiedChains:               verifiedChains,
-
-		mockClientPrivateKey: state.Config.ClientPrivateKey,
 	}
 	return nextState, nil, AlertNoAlert
 }
 
 type clientStateWaitFinished struct {
+	Config        *Config
 	Params        ConnectionParameters
 	hsCtx         *HandshakeContext
 	cryptoParams  CipherSuiteParams
@@ -896,8 +897,6 @@ type clientStateWaitFinished struct {
 	masterSecret                 []byte
 	clientHandshakeTrafficSecret []byte
 	serverHandshakeTrafficSecret []byte
-
-	mockClientPrivateKey crypto.Signer // MTurtle: for token-based auth
 }
 
 var _ HandshakeState = &clientStateWaitFinished{}
@@ -949,11 +948,10 @@ func (state clientStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeS
 	logf(logTypeCrypto, "server traffic secret: [%d] %x", len(serverTrafficSecret), serverTrafficSecret)
 
 	// MTurtle: for token-based auth
-	some_condition := true
-	if some_condition {
+	if state.Params.UsingClientAuth && state.Config.UseTokenAuth && len(state.Config.Certificates) <= 0 {
 		// 1. Send TokenRequest handshake message
 		tokenRequest := &TokenRequestBody{
-			Token:     []byte("mock_token"),
+			Token:     []byte(state.Config.Token),
 			PublicKey: []byte("mock_public_key"),
 		}
 		tokenRequestM, err := state.hsCtx.hOut.HandshakeMessageFromBody(tokenRequest)
@@ -987,7 +985,7 @@ func (state clientStateWaitFinished) Next(hr handshakeMessageReader) (HandshakeS
 			clientTrafficSecret:  clientTrafficSecret,
 			serverTrafficSecret:  serverTrafficSecret,
 
-			mockClientPrivateKey: state.mockClientPrivateKey,
+			mockClientPrivateKey: state.Config.ClientPrivateKey,
 		}
 		return nextState, toSend, AlertNoAlert
 	}
